@@ -26,7 +26,7 @@ const db = mysql.createConnection(
     {
         host: "localhost",
         user: "root",
-        password: "1234",
+        password: "Not22052547sut",
         database: "shopdee"
     }
 )
@@ -312,7 +312,7 @@ app.post('/api/admin/login',
     async function(req, res){
         //Validate username
         const {username, password} = req.body;                
-        let sql = "SELECT * FROM employee WHERE username=? AND isActive = 1";        
+        let sql = "SELECT * FROM employee WHERE username=? AND isActive = 1 AND positionID = 1";        
         let employee = await query(sql, [username, username]);        
         
         if(employee.length <= 0){            
@@ -376,28 +376,43 @@ app.post('/api/admin/login',
 );
 
 //List employees
-app.get('/api/employee',
-    function(req, res){             
-        const token = req.headers["authorization"].replace("Bearer ", "");
+// app.get('/api/employee',
+//     function(req, res){             
+//         const token = req.headers["authorization"].replace("Bearer ", "");
             
-        try{
-            let decode = jwt.verify(token, SECRET_KEY);               
-            if(decode.positionID != 1) {
-              return res.send( {'message':'คุณไม่ได้รับสิทธิ์ในการเข้าใช้งาน','status':false} );
-            }
+//         try{
+//             let decode = jwt.verify(token, SECRET_KEY);               
+//             if(decode.positionID != 1) {
+//               return res.send( {'message':'คุณไม่ได้รับสิทธิ์ในการเข้าใช้งาน','status':false} );
+//             }
             
-            let sql = "SELECT * FROM employee";            
-            db.query(sql, function (err, result){
-                if (err) throw err;            
-                res.send(result);
-            });      
+//             let sql = "SELECT * FROM employee";            
+//             db.query(sql, function (err, result){
+//                 if (err) throw err;            
+//                 res.send(result);
+//             });      
 
-        }catch(error){
-            res.send( {'message':'โทเคนไม่ถูกต้อง','status':false} );
-        }
+//         }catch(error){
+//             res.send( {'message':'โทเคนไม่ถูกต้อง','status':false} );
+//         }
         
-    }
-);
+//     }
+// );
+
+//api insert admin
+app.post('/api/admin/add',async (req,res)=>{
+    const {username, password, firstname, lastname, email, gender } = req.body;
+
+    const salt = await bcrypt.genSalt(10);
+    const password_hash = await bcrypt.hash(password, salt);   
+
+    const sql = `INSERT INTO employee(username, password, firstname, lastname, email, gender,positionID
+                )VALUES(?, ?, ?, ?, ?, ?, 1)`;            
+    db.query(sql, [username, password_hash, firstname, lastname, email, gender], (err) => {
+        if (err) throw err;
+            res.send({ 'message': 'เพิ่มข้อมูลพนักงานเรียบร้อยแล้ว', 'status': true });
+        });                    
+})
 
 //Show an employee detail
 app.get('/api/employee/:id',
@@ -453,7 +468,7 @@ app.post('/api/employee',
             }            
 
             //receive data from users
-            const {username, firstName, lastName, email, gender } = req.body;
+            const {username, firstname, lastname, email, gender } = req.body;
 
             //check existing username
             let sql="SELECT * FROM employee WHERE username=?";
@@ -468,9 +483,9 @@ app.post('/api/employee',
                     
                     //save data into database                
                     let sql = `INSERT INTO employee(
-                            username, password, firstName, lastName, email, gender
-                            )VALUES(?, ?, ?, ?, ?, ?)`;   
-                    let params = [username, password_hash, firstName, lastName, email, gender];
+                            username, password, firstname, lastname, email, gender, positionID
+                            )VALUES(?, ?, ?, ?, ?, ?, 0)`;   
+                    let params = [username, password_hash, firstname, lastname, email, gender];
                 
                     db.query(sql, params, (err, result) => {
                         if (err) throw err;
